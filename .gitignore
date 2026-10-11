@@ -1,0 +1,27 @@
+node_modules/
+dist/
+release/
+.DS_Store
+*.log
+
+# Local configuration and private material
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p8
+*.p12
+*.pfx
+*.mobileprovision
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+config/settings.json
+profile/
+coverage/
+.idea/
+.vscode/
