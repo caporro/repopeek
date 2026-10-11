@@ -5,7 +5,7 @@ import { promisify } from 'node:util';
 import { mkdtemp, mkdir, writeFile, rm, realpath, chmod } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { getOverview, getHistory, getHistoryPage, getCommitDiff, parseNumstat } from '../src/main/history';
+import { getOverview, getHistory, getHistoryPage, getCommitDiff, parseNumstat } from './native';
 const exec = promisify(execFile);
 let tick = 0;
 async function git(root: string, ...args: string[]) {
@@ -203,8 +203,8 @@ test('unborn and detached HEAD repositories remain usable; invalid commit reques
   assert.equal(overview.commits[0].hash, hash);
 });
 
-test('NUL numstat handles rename paths, special characters and binary entries', () => {
-  const stats = parseNumstat(
+test('NUL numstat handles rename paths, special characters and binary entries', async () => {
+  const stats = await parseNumstat(
     Buffer.from('1\t2\tfile\twith\nspaces\0' + '3\t4\t\0old\nname\0new\tname\0-\t-\tbinary\0'),
   );
   assert.deepEqual(stats.get('file\twith\nspaces'), { added: 1, deleted: 2, unavailable: 0 });

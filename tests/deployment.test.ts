@@ -5,7 +5,7 @@ import { promisify } from 'node:util';
 import { mkdtemp, writeFile, rm, realpath } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { getDeploymentStatus } from '../src/main/deployment';
+import { getDeploymentStatus } from './native';
 const exec = promisify(execFile);
 async function git(root: string, ...args: string[]) {
   return (

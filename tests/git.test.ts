@@ -26,8 +26,8 @@ import {
   stage,
   unstage,
   MAX_FILE_BYTES,
-} from '../src/main/git';
-import { getOverview, getCommitDiff, getHistoryPage } from '../src/main/history';
+} from './native';
+import { getOverview, getCommitDiff, getHistoryPage } from './native';
 const exec = promisify(execFile);
 const testEnv = {
   ...process.env,

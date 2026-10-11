@@ -5,49 +5,32 @@
   "private": true,
   "description": "Controllo repository Git, staging e commit. Locale, macOS.",
   "type": "module",
-  "main": "dist/main/index.cjs",
   "scripts": {
-    "dev": "node scripts/dev.mjs",
-    "build": "tsc --noEmit && node scripts/build.mjs",
-    "start": "electron .",
-    "test": "node --import tsx --test tests/*.test.ts",
+    "dev": "tauri dev",
+    "dev:ui": "vite",
+    "build:ui": "tsc --noEmit && vite build",
+    "build": "tauri build --no-bundle",
+    "start": "node scripts/start.mjs",
+    "test": "node scripts/test.mjs",
     "test:smoke": "node scripts/smoke.mjs",
-    "package": "npm run build && electron-builder --mac dir",
-    "format": "prettier --write ."
-  },
-  "build": {
-    "appId": "local.repopeek.desktop",
-    "productName": "RepoPeek",
-    "directories": {
-      "output": "release"
-    },
-    "files": [
-      "dist/**/*",
-      "package.json",
-      "!node_modules/**/*"
-    ],
-    "mac": {
-      "category": "public.app-category.developer-tools",
-      "identity": null
-    }
+    "package": "tauri build --bundles app --no-sign",
+    "format": "prettier --write src tests scripts *.json *.ts *.md"
   },
   "engines": {
     "node": ">=22.12.0"
   },
   "dependencies": {
+    "@tauri-apps/api": "^2.12.3",
     "monaco-editor": "^0.57.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2.12.2",
     "@types/node": "^26.6.3",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
-    "electron": "^44.4.5",
-    "electron-builder": "^26.15.3",
-    "esbuild": "^0.28.2",
-    "playwright": "^1.63.0",
     "prettier": "^3.9.9",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",

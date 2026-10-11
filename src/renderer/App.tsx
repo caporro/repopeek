@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import type {
   AppState,
   Change,
@@ -15,8 +15,9 @@ import { RepositorySidebar } from './RepositorySidebar';
 import { CommitGraph } from './CommitGraph';
 import { RepositoryDetail } from './RepositoryDetail';
 import type { CommitDraft } from './RepositoryDetail';
-import { CodeDiff } from './CodeDiff';
+const CodeDiff = lazy(() => import('./CodeDiff').then((module) => ({ default: module.CodeDiff })));
 import { Icon } from './ui';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 const basename = (value: string) => value.split('/').pop() || value;
 const displayName = (repo: Repository) => repo.name || basename(repo.path);
 const errorMessage = (error: unknown) =>
@@ -412,7 +413,13 @@ export function App() {
   const dirtyCount = state?.statuses.filter((status) => status.state === 'dirty').length ?? 0;
   return (
     <div className="app-shell">
-      <header className="titlebar">
+      <header
+        className="titlebar"
+        onMouseDown={(event) => {
+          if (event.button === 0 && !(event.target as Element).closest('button,select,input,textarea'))
+            void getCurrentWindow().startDragging();
+        }}
+      >
         <div className="brand">
           <span className="brand-mark">
             <Icon name="branch" size={18} />
@@ -531,7 +538,9 @@ export function App() {
                         <p>Caricamento diff…</p>
                       </div>
                     ) : selected && diff ? (
-                      <CodeDiff result={diff} file={selected.path} dark={dark} />
+                      <Suspense fallback={<div className="empty">Caricamento diff…</div>}>
+                        <CodeDiff result={diff} file={selected.path} dark={dark} />
+                      </Suspense>
                     ) : (
                       <div className="empty">
                         <p>Il file non presenta più modifiche o non è disponibile.</p>

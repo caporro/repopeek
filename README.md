@@ -1,10 +1,10 @@
 # RepoPeek
 
-App desktop locale per macOS per controllare più repository Git, gestire lo staging, creare commit e consultare le diff.
+App desktop locale per macOS per controllare più repository Git, gestire lo staging, creare commit e consultare le diff. Tauri 2 + Rust per il backend, React + TypeScript per l’interfaccia, WebKit di macOS per il rendering. Nessun runtime Electron o Node.js nell’app compilata.
 
 ## Avvio
 
-Richiede Node.js 22.12+ e Git disponibile in `/usr/bin/git`.
+Per sviluppare: Node.js 22.12+, Rust/Cargo stabile, Xcode Command Line Tools e Git disponibile in `/usr/bin/git`. Per usare l’app compilata bastano macOS e Git. Rust si installa con [rustup](https://rustup.rs/); la toolchain serve soltanto allo sviluppo.
 
 ```sh
 npm ci
@@ -24,7 +24,7 @@ Per creare l'app locale, senza firma di distribuzione:
 npm run package
 ```
 
-L'app è in `release/mac/RepoPeek.app` su Mac Intel, oppure `release/mac-arm64/RepoPeek.app` su Apple Silicon. La build usa l'architettura del Mac corrente.
+L'app è in `src-tauri/target/release/bundle/macos/RepoPeek.app`. La build usa l'architettura del Mac corrente. `npm run build` compila l’eseguibile senza creare il bundle; `npm start` avvia questo eseguibile. `npm run package` crea il bundle `.app` da copiare sulla macchina destinataria.
 
 ## Utilizzo
 
@@ -54,9 +54,9 @@ La diff di un commit confronta i blob del commit con quelli del suo genitore; pe
 
 Configurazione: `~/Library/Application Support/RepoPeek/config/settings.json`. Contiene versione del formato, percorsi, nomi personalizzati, tema e preferenze compatibili con le versioni precedenti. Il repository selezionato viene ripristinato al riavvio; il campo legacy vista lista/albero è accettato senza migrazioni. La navigazione dei file usa il tree. Le scritture sono atomiche e serializzate. Se il JSON non è leggibile viene preservato e viene mostrato il percorso da correggere; non viene sovrascritto.
 
-Gli stati, la cronologia, i conteggi e le diff non vengono salvati. Electron può creare le normali cache della propria interfaccia nella cartella dati; non sono una cache degli stati Git.
+Gli stati, la cronologia, i conteggi e le diff non vengono salvati. Il JSON esistente di Electron viene riutilizzato nello stesso percorso, senza migrazione distruttiva. WebKit può mantenere le proprie cache dell’interfaccia; non sono una cache degli stati Git.
 
-React → preload con API specifiche → processo principale Electron → Git di sistema / lettura file. Renderer isolato e sandboxed, senza API generica per eseguire comandi o caricare URL esterni. Le sole mutazioni esposte sono stage/unstage di file, cartelle o intere sezioni e commit; RepoPeek non modifica direttamente il contenuto dei file. Monaco e worker sono inclusi nella build, senza CDN. Nessun backend remoto.
+React → comandi Tauri specifici → Rust → Git di sistema / lettura file. La webview non dispone di Node.js, di una shell generica o dell’accesso generico al filesystem. Ogni comando opera soltanto su repository registrati; gli argomenti di mutazione sono validati in Rust. Navigazione esterna bloccata e CSP locale. Le sole mutazioni esposte sono stage/unstage di file, cartelle o intere sezioni e commit; RepoPeek non modifica direttamente il contenuto dei file. Le letture possono procedere in parallelo; staging e commit attendono le letture in corso e sono esclusivi. Il refresh legge fino a tre repository e la cronologia fino a due commit per volta, con un massimo globale di sei processi Git. Monaco e worker sono inclusi nella build, senza CDN, e caricati soltanto alla prima diff. Nessun backend remoto.
 
 Git usa porcelain v2 con terminatori NUL, percorsi letterali e lock opzionali disabilitati. Vengono disattivati aggiornamento automatico dell'indice, fsmonitor e lazy fetch; non vengono eseguiti diff esterni o textconv. Per Monaco si leggono i blob originali di HEAD/indice e i byte dei file locali, senza filtri smudge/textconv. Symlink: si mostra il percorso di destinazione, senza seguirlo.
 
@@ -89,4 +89,6 @@ npm run test:smoke
 
 I test Git lavorano esclusivamente su repository temporanei: stage/unstage di file e cartelle, commit del solo staging, staged/working, cronologia su branch locali e remoti, diff dei commit solo remoti, invalidazione delle pagine dopo cambi dei riferimenti, tag, primo commit, merge, preview storiche indipendenti dal working tree, conteggi delle righe, rinomine, nomi speciali, conflitti, symlink, binari, limiti, worktree, submodule e integrità delle operazioni di lettura. I test del tree verificano compattazione e aggregazione senza doppio conteggio. I test del grafo verificano corsie, WIP, merge e continuità durante la paginazione. I test JSON verificano persistenza, concorrenza e preservazione della configurazione corrotta.
 
-Il test Electron usa un profilo separato e un selettore cartelle simulato; verifica le tre colonne, selezione repository/commit, grafo locale e remoto, diff al posto del grafo, stage/unstage singoli e globali, commit inline del solo staging, bozze, Monaco, isolamento del renderer, temi, refresh e riavvio. Salva screenshot in una cartella temporanea e non aggiunge repository personali.
+`npm test` compila un driver Rust senza GUI e riutilizza i test Git/JSON esistenti contro il backend nativo. I test del tree e del grafo restano in TypeScript. Il driver non è incluso nel bundle desktop. `cargo test --manifest-path src-tauri/Cargo.toml --no-default-features --lib --locked` verifica inoltre che le letture siano concorrenti e le scritture esclusive.
+
+`npm run build:ui` verifica TypeScript e compila l’interfaccia. `npm run test:smoke` compila l’interfaccia e una variante nativa con la feature opzionale `smoke`, la avvia con un profilo e repository temporanei e verifica direttamente nella WKWebView le tre colonne, paginazione, Monaco, stage/unstage dalla UI, commit del solo staging, diff storiche, preferenze e validazione dei percorsi. Non accede ai repository personali. Le normali cancellazioni Monaco alla chiusura dell’editor sono conteggiate separatamente dagli errori JS. L’iniezione dei test e il comando che salva il rapporto esistono soltanto nella variante `smoke`, esclusa da `npm run package`. Lo smoke non automatizza il selettore cartelle, le scorciatoie di macOS o il riavvio dal Dock: questi richiedono anche una verifica manuale.

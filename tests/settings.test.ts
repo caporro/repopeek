@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { SettingsStore } from '../src/main/settings';
+import { SettingsStore } from './native';
 
 test('persists repositories and preferences across reloads with serialized atomic updates', async (t) => {
   const root = await mkdtemp(path.join(tmpdir(), 'repopeek-settings-'));
